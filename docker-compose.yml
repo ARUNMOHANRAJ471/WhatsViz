@@ -1,0 +1,12 @@
+version: "3"
+services:
+  mongo:
+    image: mongo
+    ports:
+      - "27017:27017"
+  app:
+    image: "arunmohanraj/whatviz"
+    ports:
+      - "80:80"
+    links:
+      - mongo
