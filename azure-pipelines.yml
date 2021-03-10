@@ -1,5 +1,11 @@
 # Docker
 # Build a Docker image
+- task: Application security testing@2020
+  inputs:
+    projectName: 'test_checkmarx'
+    enableProxy: false
+    enableSastScan: true
+    enableDependencyScan: false
 # https://docs.microsoft.com/azure/devops/pipelines/languages/docker
 
 trigger:
