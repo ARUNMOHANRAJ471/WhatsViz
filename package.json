@@ -23,7 +23,7 @@
         "highcharts": "^6.1.4",
         "line-by-line": "^0.1.6",
         "moment": "^2.22.2",
-        "mongoose": "^5.3.3",
+        "mongoose": "^5.13.15",
         "morgan": "^1.9.0",
         "react": "^16.5.2",
         "react-highcharts": "^16.0.2",
