@@ -76,11 +76,15 @@ function parseData(req, successCB, errorCB) {
         };
 
         // generic data regex and extract
-        let regexiOS = /^([0-9]{1,2})[/|-]([0-9]{1,2})[/|-]([0-9]{2,4}), ([0-9]{1,2}):([0-9]{1,2}):([0-9]{1,2}) (AM|am|PM|pm): ([^:]*): (.*)/
-        let regexAndroid = /^([0-9]{1,2})[/|-]([0-9]{1,2})[/|-]([0-9]{2,4}), ([0-9]{1,2}):([0-9]{1,2}) (AM|am|PM|pm) - ([^:]*): (.*)/
+        let regexiOS = /^([0-9]{1,2})[\/|-]([0-9]{1,2})[\/|-]([0-9]{2,4}),\s*([0-9]{1,2}):([0-9]{1,2}):([0-9]{1,2})\s*(AM|am|PM|pm):\s*([^:]*):\s*(.*)/i
+        let regexAndroid = /^([0-9]{1,2})[\/|-]([0-9]{1,2})[\/|-]([0-9]{2,4}),\s*([0-9]{1,2}):([0-9]{1,2})\s*(AM|am|PM|pm)\s*-\s*([^:]*):\s*(.*)/i
+        let regexBracket = /^\[([0-9]{1,2})[\/|-]([0-9]{1,2})[\/|-]([0-9]{2,4})[,\s\u202F\u200E]+([0-9]{1,2}):([0-9]{1,2})(?::([0-9]{1,2}))?\s?(AM|am|PM|pm)?\]\s+([^:]*):\s+(.*)/i
+        let regex24Hr = /^([0-9]{1,2})[\/|-]([0-9]{1,2})[\/|-]([0-9]{2,4}),\s*([0-9]{1,2}):([0-9]{1,2})(?::([0-9]{1,2}))?\s*-\s*([^:]*):\s*(.*)/i
+        
         let matchiOS = message.match(regexiOS);
         let matchAndroid = message.match(regexAndroid);
-        // console.log(matchiOS, matchAndroid);
+        let matchBracket = message.match(regexBracket);
+        let match24Hr = message.match(regex24Hr);
 
         if (matchiOS) {
             let date = matchiOS[1].length == 2 ? matchiOS[1] : "0" + matchiOS[1];
@@ -104,6 +108,30 @@ function parseData(req, successCB, errorCB) {
             msgObj.dt = date + "/" + month + "/" + year + " " + hour + ":" + min + ":00" + " " + ampm;
             msgObj.sender = matchAndroid[7];
             msgObj.msg = matchAndroid[8].trim();
+            messagesArr.push(msgObj);
+        } else if (matchBracket) {
+            let date = matchBracket[1].length == 2 ? matchBracket[1] : "0" + matchBracket[1];
+            let month = matchBracket[2].length == 2 ? matchBracket[2] : "0" + matchBracket[2];
+            let year = matchBracket[3].length == 2 ? matchBracket[3] : "20" + matchBracket[3];
+            let hour = matchBracket[4].length == 2 ? matchBracket[4] : "0" + matchBracket[4];
+            let min = matchBracket[5].length == 2 ? matchBracket[5] : "0" + matchBracket[5];
+            let sec = matchBracket[6] ? (matchBracket[6].length == 2 ? matchBracket[6] : "0" + matchBracket[6]) : "00";
+            let ampm = matchBracket[7] ? matchBracket[7].toLowerCase() : (parseInt(hour) >= 12 ? 'pm' : 'am');
+            msgObj.dt = date + "/" + month + "/" + year + " " + hour + ":" + min + ":" + sec + " " + ampm;
+            msgObj.sender = matchBracket[8];
+            msgObj.msg = matchBracket[9].trim();
+            messagesArr.push(msgObj);
+        } else if (match24Hr) {
+            let date = match24Hr[1].length == 2 ? match24Hr[1] : "0" + match24Hr[1];
+            let month = match24Hr[2].length == 2 ? match24Hr[2] : "0" + match24Hr[2];
+            let year = match24Hr[3].length == 2 ? match24Hr[3] : "20" + match24Hr[3];
+            let hour = match24Hr[4].length == 2 ? match24Hr[4] : "0" + match24Hr[4];
+            let min = match24Hr[5].length == 2 ? match24Hr[5] : "0" + match24Hr[5];
+            let sec = match24Hr[6] ? (match24Hr[6].length == 2 ? match24Hr[6] : "0" + match24Hr[6]) : "00";
+            let ampm = parseInt(hour) >= 12 ? 'pm' : 'am';
+            msgObj.dt = date + "/" + month + "/" + year + " " + hour + ":" + min + ":" + sec + " " + ampm;
+            msgObj.sender = match24Hr[7];
+            msgObj.msg = match24Hr[8].trim();
             messagesArr.push(msgObj);
         } else {
             if (messagesArr.length > 0)
@@ -140,6 +168,11 @@ function totalMessagesPerIndividual(req, successCB, errorCB) {
             if (err) throw err;
             console.log('successfully deleted ' + `${__dirname.replace('\'','/')}/chatFilesOP/${req.body.filename}.json`);
         });
+        
+        if (!chatData || chatData.length === 0) {
+            return errorCB("Unable to parse the chat file. The format might be unsupported or the file is empty.");
+        }
+
         let namesArray = [];
         let msgCount = [];
         let emojiCount = {}; // no of emojis user sent

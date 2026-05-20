@@ -1,7 +1,8 @@
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const app = express();
-const port = process.env.PORT || 80;
+const port = process.env.PORT || 5050;
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const connectflash = require('connect-flash');
@@ -57,10 +58,20 @@ console.log("-------------------------------------");
 app.use(express.static(path.join(__dirname, 'client/build')));
 // Handle React routing, return all requests to React app
 app.get('/', function(req, res) {
-    res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
+    let indexFile = path.join(__dirname, 'client/build', 'index.html');
+    if (fs.existsSync(indexFile)) {
+        res.sendFile(indexFile);
+    } else {
+        res.status(404).send('Client build not found. Run npm run build in client folder.');
+    }
 });
 app.get('/*', function(req, res) {
-    res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
+    let indexFile = path.join(__dirname, 'client/build', 'index.html');
+    if (fs.existsSync(indexFile)) {
+        res.sendFile(indexFile);
+    } else {
+        res.status(404).send('Client build not found. Run npm run build in client folder.');
+    }
 });
 //}
 
@@ -68,7 +79,7 @@ app.get('/*', function(req, res) {
 // setup mongoose connection
 setTimeout(function() {
     console.log('timeout completed');
-    let mongoURL = 'mongodb://mongo:27017/WCA';
+    let mongoURL = process.env.MONGO_URL || 'mongodb://127.0.0.1:27017/WCA';
 
     mongoose.connect(mongoURL, {
         useNewUrlParser: true
